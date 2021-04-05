@@ -634,6 +634,30 @@ If no more macro expansions are visible after this, exit
   (if (not macrostep-overlays)
       (macrostep-mode 0)))
 
+(defun macrostep--mark-overlay (overlay)
+  "Mark OVERLAY."
+  (goto-char (overlay-start overlay))
+  (set-mark (overlay-end overlay)))
+
+(defun macrostep-mark ()
+  "Mark the macro expansion at `point'.
+See also `macrostep-mark-upwards'."
+  (interactive)
+  (macrostep--mark-overlay (or (macrostep-overlay-at-point)
+                               (error "No macro expansion at point"))))
+
+(defun macrostep-mark-upwards ()
+  "Mark the macro expansion at `point' up to its root."
+  (interactive)
+  (macrostep--mark-overlay
+   (catch 'found
+     (dolist (overlay macrostep-overlays)
+       (when (and (>= (point) (overlay-start overlay))
+                  (< (point) (overlay-end overlay))
+                  (= (overlay-get overlay 'priority) 1))
+         (throw 'found overlay)))
+     (error "No macro expansion around point"))))
+
 (defun macrostep-collapse-all ()
   "Collapse all visible macro expansions and exit `macrostep-mode'."
   (interactive)
